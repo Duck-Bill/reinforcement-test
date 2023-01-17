@@ -58,9 +58,9 @@ class SnakeGame:
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption('Snake')
         self.clock = pygame.time.Clock()
-        self.reset()
+        self._reset()
     
-    def reset(self):
+    def _reset(self):
         self._create_snake(1)
         self.score = 0
         self._food_reset()
@@ -73,7 +73,7 @@ class SnakeGame:
         
         self.now_x, self.now_y = self.snake_head.cord
         
-        for i in range(1, body_cnt + 2):
+        for _ in range(1, body_cnt + 2):
             new_body = Snake((self.snake_tail.cord[0] - BLOCK_SIZE, self.snake_tail.cord[1]))
             self.snake_tail.next = new_body
             self.snake_tail = new_body
@@ -99,7 +99,7 @@ class SnakeGame:
                 pygame.quit()
                 quit()
 
-        self.move(action)
+        self._move(action)
         s = self._status()
 
         if s == DEAD:
@@ -117,7 +117,7 @@ class SnakeGame:
             reward = 0
             self.score -= 0.01
 
-            self.snake_update((self.now_x, self.now_y))
+            self._snake_update((self.now_x, self.now_y))
 
         self.score = max(0, self.score)
         if s != DEAD:
@@ -157,14 +157,12 @@ class SnakeGame:
         self.display.blit(text, [0, 0])
         pygame.display.flip()
 
-    def move(self, action):
+    def _move(self, action):
         i1 = action[1]
         i2 = action[0] - action[2]
 
         if self.direction in [Direction.DOWN, Direction.UP]:
-            i1 = i1 + i2
-            i2 = i1 - i2
-            i1 = i1 - i2
+            i1, i2 = i2, i1
         
         if self.direction in [Direction.DOWN, Direction.LEFT]:
             i1 *= -1
@@ -178,9 +176,16 @@ class SnakeGame:
         clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
         self.direction = clock_wise[(4 + self.direction + action[0] - action[2]) % 4]
 
-    def snake_update(self, cord):
+    def _snake_update(self, cord):
         self.snake_head.update()
         self.snake_head.cord = cord
+
+    def get_info(self):
+        return {
+            'snake': self.snake_head.cord,
+            'score': self.score,
+            'food': self.food
+        }
 
 
 move_dict = {
@@ -188,16 +193,17 @@ move_dict = {
     1: (0, 1, 0),
     2: (0, 0, 1),
 }
-
+import time
 while True:
     test = SnakeGame()
 
-    for i in range(100):
-        reward, s, score = test.play(move_dict[randint(0, 2)])
-        print(f'reward:{reward}, state:{s}, score:{score}')
-        if s == DEAD:
-            break
-
-    a = input()
-    if a == 'q':
-        break
+    for _ in range(5):
+        test.reset()
+        for i in range(10):
+            reward, s, score = test.play(move_dict[randint(0, 2)])
+            print(f'reward:{reward}, state:{s}, score:{score}')
+            if s == DEAD:
+                break
+        time.sleep(2)
+    
+    break
